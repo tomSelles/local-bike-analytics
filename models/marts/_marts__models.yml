@@ -1,0 +1,162 @@
+models:
+  - name: mart_sales_performance
+    description: "Monthly commercial performance by store. One row per store and month. Realized revenue only (shipped orders), January 2016 to March 2018."
+    columns:
+      - name: order_month
+        description: "First day of the month in which the orders were placed."
+        data_tests:
+          - not_null
+      - name: store_id
+        description: "Store identifier."
+        data_tests:
+          - not_null
+      - name: store_name
+        description: "Store name"
+      - name: nb_orders
+        description: "Number of shipped orders placed in the month."
+      - name: nb_active_sellers
+        description: "Number of distinct staff members who took at least one shipped order in the month. Managers who never take orders are excluded by construction."
+      - name: gross_revenue
+        description: "Revenue before discount: sum of quantity x unit price."
+      - name: discount_amount
+        description: "Revenue given away in discounts: sum of quantity x unit price x discount rate."
+      - name: net_revenue
+        description: "Realized revenue after discount: sum of quantity x unit price x (1 - discount rate). Discounts apply per order line."
+        data_tests:
+          - not_null
+      - name: avg_basket
+        description: "Average net revenue per order (net_revenue / nb_orders)."
+      - name: discount_rate
+        description: "Weighted discount rate of the month (discount_amount / gross_revenue). Computed after aggregation so that large orders weigh more than small ones."
+      - name: net_revenue_per_seller
+        description: "Net revenue divided by the number of active sellers in the month. Measures commercial load per seller, not profitability (no cost data available)."
+
+  - name: mart_category_sales
+    description: >
+      Monthly sales by category and brand. One row per category, brand and month.
+      Shipped orders only, January 2016 to March 2018.
+      Used to analyse seasonality and year-over-year growth (compare January to March only, as later 2018 months are not realized).
+    columns:
+      - name: order_month
+        description: "First day of the month in which the orders were placed."
+        data_tests:
+          - not_null
+      - name: order_year
+        description: "Year of the order date. Used for year-over-year comparisons."
+      - name: order_month_number
+        description: "Month number (1 to 12). Used for seasonality across years."
+      - name: category_name
+        description: "Product category (e.g. Mountain Bikes, Road Bikes)."
+        data_tests:
+          - not_null
+      - name: brand_name
+        description: "Product brand (e.g. Trek, Electra)."
+        data_tests:
+          - not_null
+      - name: units_sold
+        description: "Number of units sold on shipped orders."
+      - name: net_revenue
+        description: "Realized revenue after discount for the category, brand and month."
+      - name: nb_orders
+        description: "Number of distinct shipped orders containing at least one product of this category and brand. Not additive across categories: one order can contain several categories."
+
+  - name: mart_stock_coverage
+    description: >
+      Stock position and sales coverage by product and store. One row per product and store present in the stock table.
+      Stock is a single snapshot with no date, assumed to be taken early April 2018 (consistent with the last shipment on 2018-04-02).
+      Demand is measured on shipped units over the last 12 realized months (April 2017 to March 2018).
+      Limitation: product and store combinations missing from the stock table (24 out of 963) are not included.
+    columns:
+      - name: store_id
+        description: "Store identifier."
+        data_tests:
+          - not_null
+      - name: product_id
+        description: "Product identifier."
+        data_tests:
+          - not_null
+      - name: store_name
+        description: "Store name."
+      - name: product_name
+        description: "Product name."
+      - name: model_year
+        description: "Model year of the product. 2019 models have never been sold: they are treated as new products."
+      - name: list_price
+        description: "Catalog unit price. No price history exists in the data: sale price always equals catalog price."
+      - name: brand_name
+        description: "Product brand."
+      - name: category_name
+        description: "Product category."
+      - name: stock_quantity
+        description: "Units in stock in the store (snapshot, assumed early April 2018)."
+      - name: stock_value
+        description: "Stock value at catalog price (stock_quantity x list_price). Not a cost value: purchase prices are not available."
+      - name: units_sold_12m
+        description: "Units sold on shipped orders in this store between 2017-04-01 and 2018-03-31. Zero when the product did not sell."
+      - name: avg_monthly_units
+        description: "Average monthly units sold over the 12-month window (units_sold_12m / 12)."
+      - name: coverage_months
+        description: "Number of months of sales covered by the current stock (stock_quantity / avg_monthly_units). Null when the product did not sell in the window."
+      - name: stock_status
+        description: >
+          Stock diagnosis, evaluated in this order:
+          new_product = 2019 model, never sold yet;
+          stockout_risk = no stock but sold in the last 12 months;
+          dormant_stock = in stock but not sold in the last 12 months;
+          overstock = more than 12 months of coverage (threshold chosen as an assumption);
+          ok = everything else, including products with neither stock nor sales.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['new_product', 'stockout_risk', 'dormant_stock', 'overstock', 'ok']
+
+  - name: mart_order_fulfillment
+    description: >
+      Order-level view of fulfillment and repeat customers. One row per order, all statuses included (no filter).
+      Used for shipping delays, the April 2018 order backlog and orders from returning customers.
+    columns:
+      - name: order_id
+        description: "Order identifier. Primary key."
+        data_tests:
+          - unique
+          - not_null
+      - name: order_date
+        description: "Date the order was placed."
+      - name: order_month
+        description: "First day of the order month."
+      - name: customer_id
+        description: "Customer identifier."
+      - name: store_id
+        description: "Store that took the order."
+      - name: store_name
+        description: "Store name."
+      - name: staff_id
+        description: "Staff member who took the order."
+      - name: staff_name
+        description: "First and last name of the staff member."
+      - name: order_status
+        description: >
+          Raw status code from the source system. Only status 4 orders have a shipping date (proven by the data).
+          Labels 1 pending, 2 processing, 3 rejected, 4 completed follow the original BikeStores schema convention,
+          which is not included in the source data and therefore not verified.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4]
+                quote: false
+      - name: is_shipped
+        description: "True when the order has a shipping date. Basis of all realized revenue calculations."
+        data_tests:
+          - not_null
+      - name: is_late
+        description: "True when the order was shipped after the promised date. Null for orders not shipped: an unshipped order is neither late nor on time."
+      - name: promised_lead_days
+        description: "Days between order date and promised (required) date. Always 0 for unshipped orders, a likely artifact of the dataset."
+      - name: shipping_days
+        description: "Days between order date and shipping date. Null for orders not shipped."
+      - name: customer_order_rank
+        description: "Rank of the order among the customer's orders, by order date then order id (1 = first order)."
+      - name: is_repeat_order
+        description: "True when the order is not the customer's first one (customer_order_rank > 1). All repeat orders in the data are unshipped: present this fact with the caveat that it is likely a dataset artifact."
+      - name: order_net_revenue
+        description: "Net revenue of the order after discount. For shipped orders this is realized revenue; for unshipped orders it is the value of the order backlog, not revenue."

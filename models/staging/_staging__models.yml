@@ -1,0 +1,234 @@
+models:
+  - name: stg_brands
+    description: "One row per brand. Cleaned copy of raw.brands."
+    columns:
+      - name: brand_id
+        description: "Brand identifier. Primary key."
+        data_tests:
+          - unique
+          - not_null
+      - name: brand_name
+        description: "Brand name."
+
+  - name: stg_categories
+    description: "One row per product category. Cleaned copy of raw.categories."
+    columns:
+      - name: category_id
+        description: "Category identifier. Primary key."
+        data_tests:
+          - unique
+          - not_null
+      - name: category_name
+        description: "Category name."
+
+  - name: stg_customers
+    description: "One row per customer. Phone 'NULL' strings converted to real nulls, zip codes formatted as 5-character strings."
+    columns:
+      - name: customer_id
+        description: "Customer identifier. Primary key."
+        data_tests:
+          - unique
+          - not_null
+      - name: first_name
+        description: "Customer first name."
+      - name: last_name
+        description: "Customer last name."
+      - name: phone
+        description: "Customer phone number. Null for 88% of customers."
+      - name: email
+        description: "Customer email."
+      - name: street
+        description: "Street address."
+      - name: city
+        description: "City."
+      - name: state
+        description: "US state code."
+      - name: zip_code
+        description: "Zip code as a 5-character string (identifier, not a number)."
+
+  - name: stg_order_items
+    description: "One row per order line (order_id + item_id). Discount applies per line."
+    columns:
+      - name: order_id
+        description: "Order identifier."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_orders')
+                field: order_id
+      - name: item_id
+        description: "Line number within the order."
+        data_tests:
+          - not_null
+      - name: product_id
+        description: "Product sold."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_products')
+                field: product_id
+      - name: quantity
+        description: "Units sold on the line."
+      - name: list_price
+        description: "Unit price of the sale."
+      - name: discount
+        description: "Discount rate applied to the line (0.2 = 20%)."
+
+  - name: stg_orders
+    description: "One row per order. Shipping date cast from string to date; is_shipped added."
+    columns:
+      - name: order_id
+        description: "Order identifier. Primary key."
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: "Customer who placed the order."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_customers')
+                field: customer_id
+      - name: store_id
+        description: "Store that took the order."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_stores')
+                field: store_id
+      - name: staff_id
+        description: "Staff member who took the order."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_staffs')
+                field: staff_id
+      - name: order_status
+        description: "Raw status code (1 to 4). Only status 4 is shipped. Labels are an external convention, not verified."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4]
+                quote: false
+      - name: order_date
+        description: "Date the order was placed."
+      - name: required_date
+        description: "Date promised to the customer."
+      - name: shipped_date
+        description: "Shipping date. Null when the order was not shipped."
+      - name: is_shipped
+        description: "True when the order has a shipping date."
+        data_tests:
+          - not_null
+
+  - name: stg_products
+    description: "One row per product. Cleaned copy of raw.products."
+    columns:
+      - name: product_id
+        description: "Product identifier. Primary key."
+        data_tests:
+          - unique
+          - not_null
+      - name: brand_id
+        description: "Product brand."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_brands')
+                field: brand_id
+      - name: category_id
+        description: "Product category."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_categories')
+                field: category_id
+      - name: product_name
+        description: "Product name."
+      - name: model_year
+        description: "Model year (2016 to 2019)."
+      - name: list_price
+        description: "Catalog unit price."
+
+  - name: stg_staffs
+    description: "One row per staff member. Manager id cast to integer; active flag converted to boolean."
+    columns:
+      - name: staff_id
+        description: "Staff identifier. Primary key."
+        data_tests:
+          - unique
+          - not_null
+      - name: store_id
+        description: "Store the staff member works in."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_stores')
+                field: store_id
+      - name: manager_id
+        description: "Staff id of the manager. Null for the top of the hierarchy."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_staffs')
+                field: staff_id
+      - name: first_name
+        description: "First name."
+      - name: last_name
+        description: "Last name."
+      - name: email
+        description: "Email."
+      - name: phone
+        description: "Phone number."
+      - name: is_active
+        description: "True when the staff member is active."
+
+  - name: stg_stocks
+    description: "One row per product and store. Stock snapshot with no date."
+    columns:
+      - name: store_id
+        description: "Store holding the stock."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_stores')
+                field: store_id
+      - name: product_id
+        description: "Product in stock."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_products')
+                field: product_id
+      - name: quantity
+        description: "Units in stock."
+
+  - name: stg_stores
+    description: "One row per store. Zip codes formatted as 5-character strings."
+    columns:
+      - name: store_id
+        description: "Store identifier. Primary key."
+        data_tests:
+          - unique
+          - not_null
+      - name: store_name
+        description: "Store name."
+      - name: phone
+        description: "Store phone number."
+      - name: email
+        description: "Store email."
+      - name: street
+        description: "Street address."
+      - name: city
+        description: "City."
+      - name: state
+        description: "US state code."
+      - name: zip_code
+        description: "Zip code as a 5-character string."

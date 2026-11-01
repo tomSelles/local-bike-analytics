@@ -1,0 +1,141 @@
+models:
+  - name: int_order_items_enriched
+    description: >
+      One row per order line, all statuses. Joins order, product, brand, category and store,
+      and computes revenue per line. Single source of the revenue formula for the project.
+    columns:
+      - name: order_id
+        description: "Order identifier."
+        data_tests:
+          - not_null
+      - name: item_id
+        description: "Line number within the order."
+        data_tests:
+          - not_null
+      - name: order_date
+        description: "Date the order was placed."
+      - name: order_status
+        description: "Raw status code (1 to 4)."
+      - name: is_shipped
+        description: "True when the order was shipped. Filter used for realized revenue."
+      - name: customer_id
+        description: "Customer identifier."
+      - name: store_id
+        description: "Store identifier."
+      - name: staff_id
+        description: "Staff identifier."
+      - name: store_name
+        description: "Store name."
+      - name: product_id
+        description: "Product identifier."
+      - name: product_name
+        description: "Product name."
+      - name: model_year
+        description: "Product model year."
+      - name: brand_name
+        description: "Brand name."
+        data_tests:
+          - not_null
+      - name: category_name
+        description: "Category name."
+        data_tests:
+          - not_null
+      - name: quantity_sold
+        description: "Units sold on the line (renamed to avoid confusion with stock quantity)."
+      - name: unit_price
+        description: "Unit price of the sale."
+      - name: discount_rate
+        description: "Discount rate of the line (0.2 = 20%)."
+      - name: gross_revenue
+        description: "quantity_sold x unit_price."
+      - name: discount_amount
+        description: "quantity_sold x unit_price x discount_rate."
+      - name: net_revenue
+        description: "quantity_sold x unit_price x (1 - discount_rate)."
+
+  - name: int_orders_enriched
+    description: >
+      One row per order, all statuses. Order totals aggregated from int_order_items_enriched,
+      plus store and staff names, shipping delays and customer order rank.
+    columns:
+      - name: order_id
+        description: "Order identifier. Primary key."
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: "Customer identifier."
+      - name: store_id
+        description: "Store identifier."
+      - name: staff_id
+        description: "Staff identifier."
+      - name: store_name
+        description: "Store name."
+        data_tests:
+          - not_null
+      - name: staff_name
+        description: "First and last name of the staff member."
+        data_tests:
+          - not_null
+      - name: order_status
+        description: "Raw status code (1 to 4)."
+      - name: is_shipped
+        description: "True when the order was shipped."
+      - name: order_date
+        description: "Date the order was placed."
+      - name: required_date
+        description: "Date promised to the customer."
+      - name: shipped_date
+        description: "Shipping date. Null when not shipped."
+      - name: nb_lines
+        description: "Number of lines in the order."
+        data_tests:
+          - not_null
+      - name: total_quantity
+        description: "Total units in the order."
+      - name: order_gross_revenue
+        description: "Sum of line gross revenue."
+      - name: order_discount_amount
+        description: "Sum of line discount amounts."
+      - name: order_net_revenue
+        description: "Sum of line net revenue. Realized revenue if shipped, backlog value otherwise."
+      - name: promised_lead_days
+        description: "Days between order date and promised date."
+      - name: shipping_days
+        description: "Days between order date and shipping date. Null when not shipped."
+      - name: is_late
+        description: "True when shipped after the promised date. Null when not shipped."
+      - name: customer_order_rank
+        description: "Rank of the order among the customer's orders, by date then order id."
+      - name: is_repeat_order
+        description: "True when the order is not the customer's first."
+
+  - name: int_stocks_enriched
+    description: "One row per product and store. Stock snapshot enriched with product, brand, category and store, and valued at catalog price."
+    columns:
+      - name: store_id
+        description: "Store identifier."
+        data_tests:
+          - not_null
+      - name: product_id
+        description: "Product identifier."
+        data_tests:
+          - not_null
+      - name: store_name
+        description: "Store name."
+      - name: product_name
+        description: "Product name."
+        data_tests:
+          - not_null
+      - name: model_year
+        description: "Product model year."
+      - name: list_price
+        description: "Catalog unit price."
+      - name: brand_name
+        description: "Brand name."
+      - name: category_name
+        description: "Category name."
+      - name: stock_quantity
+        description: "Units in stock (renamed to avoid confusion with units sold)."
+      - name: stock_value
+        description: "stock_quantity x list_price. Catalog value, not cost value."

@@ -37,6 +37,9 @@ clean-targets:         # directories to be removed by `dbt clean`
 
 models:
   local_bike:
+    +persist_docs: 
+      relation: true
+      columns: true
     staging:
       +materialized: view
       +schema: staging
