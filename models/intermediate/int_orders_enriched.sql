@@ -8,6 +8,14 @@ order_items as (
     select * from {{ ref('int_order_items_enriched') }}
 ),
 
+stores as (
+    select * from {{ ref('stg_stores') }}
+),
+
+staffs as (
+    select * from {{ ref('stg_staffs') }}
+),
+
 -- 1. Agréger les lignes au grain commande
 order_totals as (
     select
@@ -29,6 +37,8 @@ joined as (
         orders.customer_id,
         orders.store_id,
         orders.staff_id,
+        stores.store_name,
+        concat(staffs.first_name, ' ', staffs.last_name) as staff_name,
         orders.order_status,
         orders.is_shipped,
         orders.order_date,
@@ -43,6 +53,10 @@ joined as (
     from orders
     left join order_totals
         on orders.order_id = order_totals.order_id
+    left join stores
+        on orders.store_id = stores.store_id
+    left join staffs
+        on orders.staff_id = staffs.staff_id
 ),
 
 -- 3. Calculs au grain commande
