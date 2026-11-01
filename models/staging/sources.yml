@@ -1,0 +1,15 @@
+# models/staging/sources.yml
+sources:
+  - name: local_bike
+    description: "Local Bike sales system (BikeStores dataset), loaded as-is from CSV files."
+    schema: raw
+    tables:
+      - name: brands
+      - name: categories
+      - name: customers
+      - name: order_items
+      - name: orders
+      - name: products
+      - name: staffs
+      - name: stocks
+      - name: stores
