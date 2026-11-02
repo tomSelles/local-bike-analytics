@@ -1,6 +1,3 @@
-# local-bike-analytics
-dbt + BigQuery analytics pipeline for a multi-store bike retailer: staging → marts, tested and documented, with a revenue dashboard.
-
 # Local Bike — Operations Analytics
 
 **Dashboard:** [Tableau Public — Local Bike Operations](https://public.tableau.com/views/LocalBike-Operationsdashboard/CommercialPerformance?:language=en-US&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link)
