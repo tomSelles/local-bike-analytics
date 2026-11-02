@@ -3,7 +3,7 @@ dbt + BigQuery analytics pipeline for a multi-store bike retailer: staging → m
 
 # Local Bike — Operations Analytics
 
-**Dashboard:** [Tableau Public — Local Bike Operations](https://public.tableau.com/app/profile/selles/viz/LocalBike-Operationsdashboard/Performance)
+**Dashboard:** [Tableau Public — Local Bike Operations]([https://public.tableau.com/app/profile/selles/viz/LocalBike-Operationsdashboard/Performance](https://public.tableau.com/views/LocalBike-Operationsdashboard/Fulfillment?:language=en-US&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link))
 
 ## Business problem
 
